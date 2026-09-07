@@ -24,6 +24,9 @@ export default [
 		},
 		rules: {
 			...tsPlugin.configs.recommended.rules,
+			// tsc resolves names, and this rule cannot see type-only ones: it reads
+			// `RequestInit` in an annotation as an undefined variable.
+			"no-undef": "off",
 			"@typescript-eslint/no-unused-vars": [
 				"error",
 				{ argsIgnorePattern: "^_", varsIgnorePattern: "^_" },

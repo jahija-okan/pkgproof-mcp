@@ -14,7 +14,8 @@ call over [x402](https://x402.org), and only if you configure a wallet.
 
 ## Install
 
-Nothing to install or host. Your MCP client runs the server itself.
+Nothing to install or host: your MCP client runs the server itself. Needs Node 20
+or newer.
 
 ## Free, no key
 
@@ -30,6 +31,25 @@ Add this to your MCP client configuration and you are done:
 	}
 }
 ```
+
+## The tool
+
+`verify_package`, and nothing else. One call is one verification, so the daily
+allowance means the same thing here as it does over HTTP.
+
+| Argument    | Required | Meaning                                                            |
+| ----------- | -------- | ------------------------------------------------------------------ |
+| `name`      | yes      | Package name, scoped or not: `left-pad`, `@scope/thing`.           |
+| `version`   | no       | Exact version. Omit to verify the package rather than one release. |
+| `ecosystem` | no       | Defaults to `npm`, the only ecosystem this service covers.         |
+
+It answers twice over: a summary the agent reads, and the service's own JSON
+alongside it in `structuredContent`, under a declared output schema, carrying the
+verdict, every reason with its source, and the time the verdict was computed.
+
+Calls run one at a time. The service allows one verification in flight per payer
+and refuses the second, so an agent walking a dependency list is queued here
+rather than failed.
 
 ## Two networks
 
@@ -128,6 +148,19 @@ charged once the day's free verification is used up.
 
 With neither set, the server is free-tier only and says so once the day's
 verification is spent.
+
+## Development
+
+```sh
+npm install
+npm test           # unit tests, and a real client handshake over an in-memory transport
+npm run lint       # typecheck, formatting, eslint
+npm run inspector  # build, then the MCP inspector against the local server
+```
+
+No test spends anything. The payment path is exercised against a fabricated 402
+and a published test account: an EIP-3009 authorisation is signed locally, so the
+payload and the header are checked without a wallet or a network.
 
 ## Links
 
