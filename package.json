@@ -1,0 +1,66 @@
+{
+	"name": "@pkgproof/mcp",
+	"version": "0.1.0",
+	"mcpName": "net.pkgproof/pkgproof",
+	"description": "Verify an npm package before you install it. MCP server for pkgproof.",
+	"keywords": [
+		"mcp",
+		"modelcontextprotocol",
+		"npm",
+		"security",
+		"supply-chain",
+		"typosquat",
+		"x402"
+	],
+	"license": "Apache-2.0",
+	"homepage": "https://pkgproof.net",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jahija-okan/pkgproof-mcp.git"
+	},
+	"bugs": {
+		"url": "https://github.com/jahija-okan/pkgproof-mcp/issues"
+	},
+	"type": "module",
+	"bin": {
+		"pkgproof-mcp": "dist/index.js"
+	},
+	"files": [
+		"dist",
+		"NOTICE"
+	],
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"inspector": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"lint": "npm run typecheck && npm run format:check && eslint .",
+		"lint:fix": "prettier --write . && eslint . --fix",
+		"prepublishOnly": "npm run build"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "1.30.0",
+		"@x402/avm": "2.25.0",
+		"@x402/core": "2.25.0",
+		"@x402/evm": "2.25.0",
+		"viem": "2.56.3",
+		"zod": "4.5.4"
+	},
+	"devDependencies": {
+		"@eslint/js": "9.39.2",
+		"@types/node": "26.5.0",
+		"@typescript-eslint/eslint-plugin": "8.70.0",
+		"@typescript-eslint/parser": "8.70.0",
+		"eslint": "9.39.2",
+		"eslint-config-prettier": "10.1.8",
+		"globals": "^17.12.0",
+		"prettier": "3.9.6",
+		"typescript": "5.9.3",
+		"vitest": "5.0.0"
+	}
+}

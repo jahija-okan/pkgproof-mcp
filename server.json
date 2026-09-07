@@ -1,0 +1,37 @@
+{
+	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+	"name": "net.pkgproof/pkgproof",
+	"title": "pkgproof",
+	"description": "Verify an npm package before you install it. Eight checks covering advisories, install scripts, typosquat and combosquat names, scope, repository provenance and maintainer reputation, returning safe, caution, block or does_not_exist with every reason sourced.",
+	"version": "0.1.0",
+	"websiteUrl": "https://pkgproof.net",
+	"repository": {
+		"url": "https://github.com/jahija-okan/pkgproof-mcp",
+		"source": "github"
+	},
+	"packages": [
+		{
+			"registryType": "npm",
+			"registryBaseUrl": "https://registry.npmjs.org",
+			"identifier": "@pkgproof/mcp",
+			"version": "0.1.0",
+			"transport": {
+				"type": "stdio"
+			},
+			"environmentVariables": [
+				{
+					"name": "PKGPROOF_ALGORAND_PRIVATE_KEY",
+					"description": "Base64 account key of a throwaway Algorand wallet holding USDC (ASA 31566704) on Algorand Mainnet. Not a 25-word mnemonic. Optional: the first verification each day is free without any key. This is the rail payments prefer.",
+					"isRequired": false,
+					"isSecret": true
+				},
+				{
+					"name": "PKGPROOF_BASE_PRIVATE_KEY",
+					"description": "0x-prefixed private key of a throwaway EVM wallet holding USDC on Base. Optional, and only used when no Algorand key is configured. Needs no ETH: payment is an off-chain signature and the facilitator pays the gas.",
+					"isRequired": false,
+					"isSecret": true
+				}
+			]
+		}
+	]
+}
