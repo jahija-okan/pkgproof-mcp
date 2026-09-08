@@ -187,8 +187,9 @@ Bump `package.json`, `server.json` and `SERVER_VERSION` together — a test enfo
 they agree, and the workflow refuses a tag that disagrees with `package.json`.
 
 ```sh
-git tag v0.1.2
-git push origin v0.1.2
+tag="v$(node -p "require('./package.json').version")"
+git tag "$tag"
+git push origin "$tag"
 ```
 
 The workflow re-runs the checks, publishes with provenance, then reads the
