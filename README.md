@@ -17,6 +17,18 @@ call over [x402](https://x402.org), and only if you configure a wallet.
 Nothing to install or host: your MCP client runs the server itself. Needs Node 22
 or newer.
 
+Every release from 0.1.1 on is built and signed by CI and carries an npm
+[provenance attestation](https://docs.npmjs.com/generating-provenance-statements)
+tying the tarball to the commit and workflow run that produced it. A tool that
+reports on other packages' provenance should be checkable the same way:
+
+```sh
+npm audit signatures
+```
+
+The server is also listed in the [MCP Registry](https://registry.modelcontextprotocol.io)
+as `net.pkgproof/pkgproof`.
+
 ## Free, no key
 
 Add this to your MCP client configuration and you are done:
@@ -164,9 +176,43 @@ wallet key is set in the environment. The payment path is exercised against a
 fabricated 402 and a published test account, so an EIP-3009 authorisation is
 signed locally and the payload and header are checked without a wallet.
 
+## Releasing
+
+Releases are cut by tag and published by CI. Nothing is published from a laptop,
+and there is no npm token in this repository to steal: the workflow authenticates
+over OIDC as a [trusted publisher](https://docs.npmjs.com/trusted-publishers),
+and the package is set to disallow token publishing entirely.
+
+Bump `package.json`, `server.json` and `SERVER_VERSION` together — a test enforces
+they agree, and the workflow refuses a tag that disagrees with `package.json`.
+
+```sh
+git tag v0.1.2
+git push origin v0.1.2
+```
+
+The workflow re-runs the checks, publishes with provenance, then reads the
+registry back to confirm the version and its attestation are really there: a
+publish that half-succeeds must not report green.
+
+The MCP Registry listing is separate and updated by hand whenever `server.json`
+changes. It is authenticated by a DNS TXT record on `pkgproof.net`, so it needs
+no credential in the repository either.
+
+```sh
+mcp-publisher login dns --domain pkgproof.net --private-key "$KEY"
+mcp-publisher validate
+mcp-publisher publish
+```
+
+`server.json` is not part of the npm tarball, so a listing change needs no
+release.
+
 ## Links
 
 - Service and docs: <https://pkgproof.net/docs>
+- MCP Registry entry:
+  <https://registry.modelcontextprotocol.io/v0/servers?search=pkgproof>
 - OpenAPI, Base rail: <https://x402.pkgproof.net/openapi.json>
 - OpenAPI, Algorand rail: <https://x402-algo.pkgproof.net/openapi.json>
 

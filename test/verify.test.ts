@@ -78,6 +78,24 @@ function refusalResponse(error: string): Response {
 	return new Response(JSON.stringify({ error }), { status: 402 });
 }
 
+/**
+ * The origin's 409, captured live. It is a different shape from the paywall's
+ * 402 above: the code arrives as its own field rather than as the head of a
+ * sentence, so a hint that reads either shape has to read both.
+ */
+function inFlightResponse(): Response {
+	return new Response(
+		JSON.stringify({
+			error: {
+				code: "payment_claim_in_flight",
+				message:
+					"Another verification is already running for this payer. This authorisation was not spent; resend it once that one finishes.",
+			},
+		}),
+		{ status: 409 }
+	);
+}
+
 function paywallResponse(): Response {
 	return new Response(JSON.stringify(TERMS), {
 		status: 402,
@@ -220,11 +238,15 @@ describe("paying", () => {
 		expect(error.message).toContain(TEST_ADDRESS);
 	});
 
-	it("still reads a code the paywall sends as its own segment", async () => {
+	it("reads the code out of the origin's 409, where it is a field rather than a prefix", async () => {
 		const { verifyPackage } = await load({ [RAILS.base.keyEnvVar]: TEST_KEY });
-		stubFetch([paywallResponse(), refusalResponse("payment_claim_in_flight")]);
+		stubFetch([paywallResponse(), inFlightResponse()]);
 
-		await expect(verifyPackage(REQUEST)).rejects.toThrow(/Another verification is already running/);
+		const error = await verifyPackage(REQUEST).catch((thrown: Error) => thrown);
+
+		expect(error.message).toContain("This authorisation was not spent");
+		expect(error.message).toContain("Another verification is already running for this wallet");
+		expect(error.message).toContain(TEST_ADDRESS);
 	});
 
 	it("reports an unusable key by format, never by value", async () => {
