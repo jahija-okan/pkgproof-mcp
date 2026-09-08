@@ -3,7 +3,7 @@
 	"name": "net.pkgproof/pkgproof",
 	"title": "pkgproof",
 	"description": "Verify an npm package before you install it. Eight checks covering advisories, install scripts, typosquat and combosquat names, scope, repository provenance and maintainer reputation, returning safe, caution, block or does_not_exist with every reason sourced.",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"websiteUrl": "https://pkgproof.net",
 	"repository": {
 		"url": "https://github.com/jahija-okan/pkgproof-mcp",
@@ -14,7 +14,7 @@
 			"registryType": "npm",
 			"registryBaseUrl": "https://registry.npmjs.org",
 			"identifier": "@pkgproof/mcp",
-			"version": "0.1.0",
+			"version": "0.1.1",
 			"transport": {
 				"type": "stdio"
 			},
