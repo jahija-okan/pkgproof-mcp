@@ -27,31 +27,55 @@ const TERMS = {
 	],
 };
 
+/** Captured from a live verification, not written by hand. Two things a
+ *  hand-written fixture gets wrong: `sources` is keyed in snake_case, and a
+ *  reason's `source` is drawn from a different vocabulary than those keys —
+ *  sometimes an upstream (`npm_registry`, `osv.dev`), sometimes the check that
+ *  produced it (`scope_confusion`, `npm_reputation`). */
 const VERDICT = {
 	ecosystem: "npm",
 	name: "left-pad",
-	version: "1.3.0",
+	version: null,
 	verdict: "safe",
 	reasons: [
 		{
 			verdict: "safe",
-			code: "package_exists",
-			kind: "fact",
-			source: "npm registry",
-			detail: "left-pad 1.3.0 is published on the npm registry.",
+			code: "scope_recognized_package",
+			kind: "heuristic",
+			source: "scope_confusion",
+			detail:
+				"'left-pad' is itself a popular npm package (>= 100000 weekly downloads), not a scope lookalike.",
+			data: { name: "left-pad" },
 		},
 	],
-	sources: { "npm registry": "https://registry.npmjs.org" },
-	checked_at: "2026-09-07T12:00:00Z",
+	sources: {
+		npm_registry: "https://registry.npmjs.org",
+		osv: "https://api.osv.dev/v1",
+		npm_downloads: "https://api.npmjs.org/downloads/point/last-week",
+	},
+	checked_at: "2026-09-08T10:28:51Z",
 };
 
-const REQUEST = { ecosystem: "npm", name: "left-pad", version: "1.3.0" };
+/** Version omitted, which is the exchange VERDICT was captured from. */
+const REQUEST = { ecosystem: "npm", name: "left-pad" };
 
 function verdictResponse(free: boolean): Response {
 	return new Response(JSON.stringify(VERDICT), {
 		status: 200,
 		headers: free ? { "x-free-verification": "1" } : {},
 	});
+}
+
+/** The Base rail's own words when the signed authorisation reverts, which is what
+ *  an account holding no USDC produces. Captured, not composed. */
+const EMPTY_WALLET_REFUSAL =
+	"invalid_payload: contract call failed: unable to call contract: execution reverted";
+
+/** The account TEST_KEY signs as, so a message naming the wallet can be checked. */
+const TEST_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+
+function refusalResponse(error: string): Response {
+	return new Response(JSON.stringify({ error }), { status: 402 });
 }
 
 function paywallResponse(): Response {
@@ -178,15 +202,29 @@ describe("paying", () => {
 
 	it("stops on a refused payment rather than signing a second one", async () => {
 		const { verifyPackage } = await load({ [RAILS.base.keyEnvVar]: TEST_KEY });
-		const { calls } = stubFetch([
-			paywallResponse(),
-			new Response(JSON.stringify({ error: "invalid_exact_evm_insufficient_balance" }), {
-				status: 402,
-			}),
-		]);
+		const { calls } = stubFetch([paywallResponse(), refusalResponse(EMPTY_WALLET_REFUSAL)]);
 
-		await expect(verifyPackage(REQUEST)).rejects.toThrow(/out of USDC/);
+		await expect(verifyPackage(REQUEST)).rejects.toThrow(/No second payment was signed/);
 		expect(calls).toHaveLength(2);
+	});
+
+	// The refusal an unfunded wallet actually draws. It says nothing about a
+	// balance, so a hint keyed to the word "insufficient" never fires on it.
+	it("explains the refusal an empty Base wallet draws, and names the account", async () => {
+		const { verifyPackage } = await load({ [RAILS.base.keyEnvVar]: TEST_KEY });
+		stubFetch([paywallResponse(), refusalResponse(EMPTY_WALLET_REFUSAL)]);
+
+		const error = await verifyPackage(REQUEST).catch((thrown: Error) => thrown);
+
+		expect(error.message).toContain("rejected the authorisation on-chain");
+		expect(error.message).toContain(TEST_ADDRESS);
+	});
+
+	it("still reads a code the paywall sends as its own segment", async () => {
+		const { verifyPackage } = await load({ [RAILS.base.keyEnvVar]: TEST_KEY });
+		stubFetch([paywallResponse(), refusalResponse("payment_claim_in_flight")]);
+
+		await expect(verifyPackage(REQUEST)).rejects.toThrow(/Another verification is already running/);
 	});
 
 	it("reports an unusable key by format, never by value", async () => {

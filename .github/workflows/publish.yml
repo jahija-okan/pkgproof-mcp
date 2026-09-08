@@ -1,0 +1,38 @@
+name: Publish
+
+# Tagged, not on push: publishing is a decision, and the tag is where it is made.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  # Mints the OIDC token npm exchanges for a provenance attestation.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci
+
+      # The tag is not trusted to have been tested. A red build here is a
+      # release that does not happen.
+      - run: npm run lint
+      - run: npm test
+
+      # --provenance signs the tarball against this commit and this run, which is
+      # the claim `repository_provenance` looks for in everything else.
+      # prepublishOnly builds dist/ first.
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
