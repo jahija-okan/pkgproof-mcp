@@ -10,7 +10,7 @@ import {
 } from "./api.js";
 import { VerifyError } from "./errors.js";
 import { FREE_RAIL, RAILS, type Rail } from "./meta.js";
-import { paidRail, settlementTransaction, signPayment } from "./payment.js";
+import { paidRail, payerAddress, settlementTransaction, signPayment } from "./payment.js";
 
 export interface Payment {
 	rail: Rail;
@@ -125,16 +125,49 @@ function paymentFailure(attempt: Attempt): string {
 		.join("\n");
 }
 
+/**
+ * Guidance for the failures a caller can act on, with the wallet named.
+ *
+ * The address is appended in one place rather than written into each branch: it
+ * is the same answer to "which wallet" whatever went wrong, and it is absent
+ * only when the key that produced the failure will not parse.
+ */
 function hintFor(rail: Rail, code: string): string {
-	if (/insufficient/i.test(code)) {
+	const hint = failureHint(rail, code);
+	if (!hint) {
+		return "";
+	}
+
+	const address = payerAddress(rail);
+	return address ? `${hint} The paying account is ${address}.` : hint;
+}
+
+function failureHint(rail: Rail, code: string): string {
+	if (matches(code, "payment_claim_in_flight")) {
+		return "Another verification is already running for this wallet. Try again once it finishes.";
+	}
+	if (matches(code, "insufficient")) {
 		return rail.id === "algorand"
 			? `The wallet is out of USDC. Top up ASA 31566704 on ${rail.label}, and note that an account holds none of an asset it has not opted into, whatever was sent to it.`
 			: `The wallet is out of USDC. Top it up on ${rail.label}.`;
 	}
-	if (code === "payment_claim_in_flight") {
-		return "Another verification is already running for this wallet. Try again once it finishes.";
+	if (matches(code, "execution reverted")) {
+		// What an unfunded Base wallet actually produces. Not asserted as the cause:
+		// a reused or expired authorisation reverts the same way.
+		return `${rail.label} rejected the authorisation on-chain. The usual cause is an empty wallet holding no USDC.`;
 	}
 	return "";
+}
+
+/**
+ * The paywall answers `{ error: "<code>: <detail>" }`, so the code is the first
+ * segment and not the whole string: an unfunded Base wallet arrives as
+ * `invalid_payload: contract call failed: unable to call contract: execution
+ * reverted`. The detail is searched too, because that is where the cause is.
+ */
+function matches(code: string, needle: string): boolean {
+	const token = code.split(":", 1)[0]?.trim() ?? "";
+	return token === needle || code.toLowerCase().includes(needle);
 }
 
 function detail({ code, message }: { code: string; message: string }): string {

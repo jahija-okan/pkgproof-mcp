@@ -14,7 +14,7 @@ call over [x402](https://x402.org), and only if you configure a wallet.
 
 ## Install
 
-Nothing to install or host: your MCP client runs the server itself. Needs Node 20
+Nothing to install or host: your MCP client runs the server itself. Needs Node 22
 or newer.
 
 ## Free, no key
@@ -158,9 +158,11 @@ npm run lint       # typecheck, formatting, eslint
 npm run inspector  # build, then the MCP inspector against the local server
 ```
 
-No test spends anything. The payment path is exercised against a fabricated 402
-and a published test account: an EIP-3009 authorisation is signed locally, so the
-payload and the header are checked without a wallet or a network.
+No test spends anything, and the suite enforces it rather than trusting it: a
+test that reaches for the network fails, and the run refuses to start at all if a
+wallet key is set in the environment. The payment path is exercised against a
+fabricated 402 and a published test account, so an EIP-3009 authorisation is
+signed locally and the payload and header are checked without a wallet.
 
 ## Links
 

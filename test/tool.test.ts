@@ -5,30 +5,45 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SERVER_NAME, SERVER_VERSION } from "../src/meta.js";
 import { registerVerifyPackage } from "../src/tool.js";
 
+/** Captured from a live verification. A reason's `source` is drawn from a
+ *  different vocabulary than the `sources` keys: sometimes an upstream
+ *  (`npm_registry`, `osv.dev`), sometimes the check that produced it. */
 const VERDICT = {
 	ecosystem: "npm",
 	name: "left-pad",
-	version: "1.3.0",
+	version: null,
 	verdict: "safe",
 	reasons: [
 		{
 			verdict: "safe",
-			code: "package_exists",
+			code: "source_repository_present",
 			kind: "fact",
-			source: "npm registry",
-			detail: "left-pad 1.3.0 is published on the npm registry.",
+			source: "repository_provenance",
+			detail:
+				"'left-pad' declares a source repository (git+ssh://git@github.com/stevemao/left-pad.git). The declaration is unverified: pkgproof does not confirm the repository exists or that it publishes this package.",
+			data: {
+				name: "left-pad",
+				repository: "git+ssh://git@github.com/stevemao/left-pad.git",
+				owner: "stevemao",
+				repo: "left-pad",
+				verified: false,
+			},
 		},
 		{
 			verdict: "safe",
-			code: "no_known_advisories",
-			kind: "fact",
-			source: "osv.dev",
-			detail: "OSV lists no advisories for this version.",
-			data: { advisories: [] },
+			code: "no_combosquat_match",
+			kind: "heuristic",
+			source: "combosquat_heuristic",
+			detail: "Name 'left-pad' is not a popular package name with a generic affix attached.",
+			data: { name: "left-pad" },
 		},
 	],
-	sources: { "npm registry": "https://registry.npmjs.org", "osv.dev": "https://api.osv.dev" },
-	checked_at: "2026-09-07T12:00:00Z",
+	sources: {
+		npm_registry: "https://registry.npmjs.org",
+		osv: "https://api.osv.dev/v1",
+		npm_downloads: "https://api.npmjs.org/downloads/point/last-week",
+	},
+	checked_at: "2026-09-08T10:28:51Z",
 };
 
 /**
@@ -112,15 +127,27 @@ describe("calling it", () => {
 
 		const result = await client.callTool({
 			name: "verify_package",
-			arguments: { name: "left-pad", version: "1.3.0" },
+			arguments: { name: "left-pad" },
 		});
 		const [text] = result.content as { text: string }[];
 
 		expect(result.isError).toBeFalsy();
-		expect(text?.text).toContain("safe — npm left-pad@1.3.0");
-		expect(text?.text).toContain("- safe (fact, osv.dev) OSV lists no advisories");
+		expect(text?.text).toContain("safe — npm left-pad");
+		expect(text?.text).toContain("- safe (fact, repository_provenance) 'left-pad' declares");
 		expect(text?.text).toContain("today's free verification");
 		expect(result.structuredContent).toEqual(VERDICT);
+	});
+
+	it("names the version in the summary when one was verified", async () => {
+		respond({ ...VERDICT, version: "1.3.0" }, { status: 200 });
+
+		const result = await client.callTool({
+			name: "verify_package",
+			arguments: { name: "left-pad", version: "1.3.0" },
+		});
+		const [text] = result.content as { text: string }[];
+
+		expect(text?.text).toContain("safe — npm left-pad@1.3.0");
 	});
 
 	it("refuses a nameless call before spending anything", async () => {

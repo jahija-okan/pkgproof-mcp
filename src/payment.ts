@@ -16,7 +16,13 @@ export interface SignedPayment {
 	amount: string;
 }
 
-const clients = new Map<RailId, x402HTTPClient>();
+/** A rail's signing client and the account it signs as. */
+interface RailClient {
+	client: x402HTTPClient;
+	address: string;
+}
+
+const clients = new Map<RailId, RailClient>();
 
 /** The rail money goes to: the first in preference order with a key configured. */
 export function paidRail(): Rail | null {
@@ -28,9 +34,23 @@ export function paidRail(): Rail | null {
 	return null;
 }
 
+/**
+ * The account that pays on this rail, or null when no usable key is configured.
+ *
+ * Only ever used to name a wallet in a message, so an unusable key is not worth
+ * an error here: the caller is already reporting one.
+ */
+export function payerAddress(rail: Rail): string | null {
+	try {
+		return clientFor(rail).address;
+	} catch {
+		return null;
+	}
+}
+
 /** Sign a 402's terms once, under whatever header name the encoder chose for them. */
 export async function signPayment(quote: Attempt): Promise<SignedPayment> {
-	const client = clientFor(quote.rail);
+	const { client } = clientFor(quote.rail);
 	const terms = readTerms(client, quote);
 
 	const payload = await client.createPaymentPayload(terms).catch((error: unknown) => {
@@ -48,7 +68,7 @@ export async function signPayment(quote: Attempt): Promise<SignedPayment> {
 /** The transaction the facilitator submitted, when the response carries a receipt. */
 export function settlementTransaction(rail: Rail, response: Response): string | null {
 	try {
-		return clientFor(rail).getPaymentSettleResponse((name) => response.headers.get(name))
+		return clientFor(rail).client.getPaymentSettleResponse((name) => response.headers.get(name))
 			.transaction;
 	} catch {
 		// No receipt header. The payment went through; the account of it did not.
@@ -66,7 +86,7 @@ function keyFor(rail: Rail): string {
  * A key that will not parse is reported by format alone. Both signers quote what
  * they were handed, so their message must not reach the caller.
  */
-function clientFor(rail: Rail): x402HTTPClient {
+function clientFor(rail: Rail): RailClient {
 	const built = clients.get(rail.id);
 	if (built) {
 		return built;
@@ -77,7 +97,7 @@ function clientFor(rail: Rail): x402HTTPClient {
 		throw new VerifyError(`${rail.keyEnvVar} is not set.`);
 	}
 
-	let client: x402HTTPClient;
+	let client: RailClient;
 	try {
 		client = rail.id === "algorand" ? algorandClient(key) : baseClient(key);
 	} catch {
@@ -93,14 +113,23 @@ function clientFor(rail: Rail): x402HTTPClient {
  * genesis hash where the library's canonical form is truncated, and either has to
  * match.
  */
-function algorandClient(key: string): x402HTTPClient {
-	const scheme = new ExactAvmScheme(toClientAvmSigner(key));
-	return new x402HTTPClient(new x402Client().register("algorand:*", scheme));
+function algorandClient(key: string): RailClient {
+	const signer = toClientAvmSigner(key);
+	const scheme = new ExactAvmScheme(signer);
+
+	return {
+		client: new x402HTTPClient(new x402Client().register("algorand:*", scheme)),
+		address: signer.address,
+	};
 }
 
-function baseClient(key: string): x402HTTPClient {
+function baseClient(key: string): RailClient {
 	const signer = privateKeyToAccount(key as `0x${string}`);
-	return new x402HTTPClient(registerExactEvmScheme(new x402Client(), { signer }));
+
+	return {
+		client: new x402HTTPClient(registerExactEvmScheme(new x402Client(), { signer })),
+		address: signer.address,
+	};
 }
 
 function readTerms(client: x402HTTPClient, quote: Attempt) {
