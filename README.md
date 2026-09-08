@@ -176,39 +176,6 @@ wallet key is set in the environment. The payment path is exercised against a
 fabricated 402 and a published test account, so an EIP-3009 authorisation is
 signed locally and the payload and header are checked without a wallet.
 
-## Releasing
-
-Releases are cut by tag and published by CI. Nothing is published from a laptop,
-and there is no npm token in this repository to steal: the workflow authenticates
-over OIDC as a [trusted publisher](https://docs.npmjs.com/trusted-publishers),
-and the package is set to disallow token publishing entirely.
-
-Bump `package.json`, `server.json` and `SERVER_VERSION` together — a test enforces
-they agree, and the workflow refuses a tag that disagrees with `package.json`.
-
-```sh
-tag="v$(node -p "require('./package.json').version")"
-git tag "$tag"
-git push origin "$tag"
-```
-
-The workflow re-runs the checks, publishes with provenance, then reads the
-registry back to confirm the version and its attestation are really there: a
-publish that half-succeeds must not report green.
-
-The MCP Registry listing is separate and updated by hand whenever `server.json`
-changes. It is authenticated by a DNS TXT record on `pkgproof.net`, so it needs
-no credential in the repository either.
-
-```sh
-mcp-publisher login dns --domain pkgproof.net --private-key "$KEY"
-mcp-publisher validate
-mcp-publisher publish
-```
-
-`server.json` is not part of the npm tarball, so a listing change needs no
-release.
-
 ## Links
 
 - Service and docs: <https://pkgproof.net/docs>
