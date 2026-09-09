@@ -3,7 +3,7 @@ export const SERVER_NAME = "pkgproof";
 // Duplicated from package.json: the published tarball ships dist only, so there
 // is no package.json beside the entry point to read at runtime. A test asserts
 // the two stay equal.
-export const SERVER_VERSION = "0.1.3";
+export const SERVER_VERSION = "0.1.4";
 
 export type RailId = "algorand" | "base";
 
