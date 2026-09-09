@@ -1,8 +1,5 @@
-/**
- * Two things a test in this repo must never do: reach the live service, or sign
- * with a real key. A verification costs USDC, so both are guarded here rather
- * than left to review — the failure they prevent is a charge, not a red test.
- */
+// A verification costs USDC. No test may reach the live service or hold a real
+// key, so both are guarded here rather than left to review.
 
 import { beforeEach } from "vitest";
 
@@ -20,8 +17,6 @@ beforeEach(() => {
 	globalThis.fetch = unreachable;
 });
 
-/** Replaces `fetch` before every test, so forgetting to stub it fails the test
- *  rather than quietly spending a verification. */
 function unreachable(): never {
 	throw new Error(
 		"fetch was not stubbed. Tests must not reach the live service; stub it with vi.stubGlobal."

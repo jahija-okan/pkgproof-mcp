@@ -5,9 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SERVER_NAME, SERVER_VERSION } from "../src/meta.js";
 import { registerVerifyPackage } from "../src/tool.js";
 
-/** Captured from a live verification. A reason's `source` is drawn from a
- *  different vocabulary than the `sources` keys: sometimes an upstream
- *  (`npm_registry`, `osv.dev`), sometimes the check that produced it. */
+/** Captured from a live verification, not written by hand. */
 const VERDICT = {
 	ecosystem: "npm",
 	name: "left-pad",
@@ -46,11 +44,7 @@ const VERDICT = {
 	checked_at: "2026-09-08T10:28:51Z",
 };
 
-/**
- * A real client over a real handshake, so the tool is exercised the way a client
- * exercises it: the schemas go over the wire and the client validates the result
- * against the output schema this server advertised.
- */
+/** A real client over a real handshake, so schemas go over the wire. */
 async function connect(): Promise<Client> {
 	const server = new McpServer(
 		{ name: SERVER_NAME, version: SERVER_VERSION },
@@ -102,8 +96,6 @@ describe("the tool it advertises", () => {
 		expect(Object.keys(input.properties)).toEqual(["ecosystem", "name", "version"]);
 	});
 
-	// Past the daily free verification this spends USDC, so a client must not be
-	// able to read it as free to call.
 	it("does not claim to be read-only", async () => {
 		const { tools } = await client.listTools();
 
@@ -160,8 +152,6 @@ describe("calling it", () => {
 		expect(fetched).not.toHaveBeenCalled();
 	});
 
-	// An error carries no structuredContent, which is what keeps a failure from
-	// being read as a verdict.
 	it("reports a paywall with no wallet as an error, not as a verdict", async () => {
 		respond({ error: "Payment required." }, { status: 402 });
 

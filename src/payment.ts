@@ -1,5 +1,3 @@
-/** Which rail pays, how the terms get signed, and what the receipt says. */
-
 import { toClientAvmSigner } from "@x402/avm";
 import { ExactAvmScheme } from "@x402/avm/exact/client";
 import { x402Client, x402HTTPClient } from "@x402/core/client";
@@ -16,7 +14,6 @@ export interface SignedPayment {
 	amount: string;
 }
 
-/** A rail's signing client and the account it signs as. */
 interface RailClient {
 	client: x402HTTPClient;
 	address: string;
@@ -24,7 +21,6 @@ interface RailClient {
 
 const clients = new Map<RailId, RailClient>();
 
-/** The rail money goes to: the first in preference order with a key configured. */
 export function paidRail(): Rail | null {
 	for (const id of PAID_RAIL_ORDER) {
 		if (keyFor(RAILS[id])) {
@@ -34,12 +30,6 @@ export function paidRail(): Rail | null {
 	return null;
 }
 
-/**
- * The account that pays on this rail, or null when no usable key is configured.
- *
- * Only ever used to name a wallet in a message, so an unusable key is not worth
- * an error here: the caller is already reporting one.
- */
 export function payerAddress(rail: Rail): string | null {
 	try {
 		return clientFor(rail).address;
@@ -48,7 +38,6 @@ export function payerAddress(rail: Rail): string | null {
 	}
 }
 
-/** Sign a 402's terms once, under whatever header name the encoder chose for them. */
 export async function signPayment(quote: Attempt): Promise<SignedPayment> {
 	const { client } = clientFor(quote.rail);
 	const terms = readTerms(client, quote);
@@ -65,13 +54,11 @@ export async function signPayment(quote: Attempt): Promise<SignedPayment> {
 	return { headers, amount: payload.accepted.amount };
 }
 
-/** The transaction the facilitator submitted, when the response carries a receipt. */
 export function settlementTransaction(rail: Rail, response: Response): string | null {
 	try {
 		return clientFor(rail).client.getPaymentSettleResponse((name) => response.headers.get(name))
 			.transaction;
 	} catch {
-		// No receipt header. The payment went through; the account of it did not.
 		return null;
 	}
 }
@@ -80,12 +67,6 @@ function keyFor(rail: Rail): string {
 	return process.env[rail.keyEnvVar]?.trim() ?? "";
 }
 
-/**
- * The signing client for a rail, built once.
- *
- * A key that will not parse is reported by format alone. Both signers quote what
- * they were handed, so their message must not reach the caller.
- */
 function clientFor(rail: Rail): RailClient {
 	const built = clients.get(rail.id);
 	if (built) {
@@ -101,6 +82,8 @@ function clientFor(rail: Rail): RailClient {
 	try {
 		client = rail.id === "algorand" ? algorandClient(key) : baseClient(key);
 	} catch {
+		// Both signers quote the key they were handed, so their message must not
+		// reach the caller: report the format only.
 		throw new VerifyError(`${rail.keyEnvVar} is not usable: expected a ${rail.keyFormat}.`);
 	}
 
@@ -108,15 +91,12 @@ function clientFor(rail: Rail): RailClient {
 	return client;
 }
 
-/**
- * Registered on `algorand:*` rather than one network id: the rail quotes the full
- * genesis hash where the library's canonical form is truncated, and either has to
- * match.
- */
 function algorandClient(key: string): RailClient {
 	const signer = toClientAvmSigner(key);
 	const scheme = new ExactAvmScheme(signer);
 
+	// Registered on `algorand:*` rather than one network id: the rail quotes the
+	// full genesis hash where the library's canonical form is truncated.
 	return {
 		client: new x402HTTPClient(new x402Client().register("algorand:*", scheme)),
 		address: signer.address,

@@ -2,11 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RAILS } from "../src/meta.js";
 
-/**
- * Hardhat's first account: published in its docs, holds nothing anywhere, and
- * signs here only against a fabricated 402. EIP-3009 is signed off chain, so
- * these tests reach no network and no wallet.
- */
+/** Hardhat's first account, published in its docs and holding nothing. */
 const TEST_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
 /** The Base rail's live terms, trimmed to what the client reads. */
@@ -27,11 +23,7 @@ const TERMS = {
 	],
 };
 
-/** Captured from a live verification, not written by hand. Two things a
- *  hand-written fixture gets wrong: `sources` is keyed in snake_case, and a
- *  reason's `source` is drawn from a different vocabulary than those keys —
- *  sometimes an upstream (`npm_registry`, `osv.dev`), sometimes the check that
- *  produced it (`scope_confusion`, `npm_reputation`). */
+/** Captured from a live verification, not written by hand. */
 const VERDICT = {
 	ecosystem: "npm",
 	name: "left-pad",
@@ -56,7 +48,6 @@ const VERDICT = {
 	checked_at: "2026-09-08T10:28:51Z",
 };
 
-/** Version omitted, which is the exchange VERDICT was captured from. */
 const REQUEST = { ecosystem: "npm", name: "left-pad" };
 
 function verdictResponse(free: boolean): Response {
@@ -66,23 +57,18 @@ function verdictResponse(free: boolean): Response {
 	});
 }
 
-/** The Base rail's own words when the signed authorisation reverts, which is what
- *  an account holding no USDC produces. Captured, not composed. */
+/** Captured: what the Base rail says when a signed authorisation reverts. */
 const EMPTY_WALLET_REFUSAL =
 	"invalid_payload: contract call failed: unable to call contract: execution reverted";
 
-/** The account TEST_KEY signs as, so a message naming the wallet can be checked. */
+/** The account TEST_KEY signs as. */
 const TEST_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
 function refusalResponse(error: string): Response {
 	return new Response(JSON.stringify({ error }), { status: 402 });
 }
 
-/**
- * The origin's 409, captured live. It is a different shape from the paywall's
- * 402 above: the code arrives as its own field rather than as the head of a
- * sentence, so a hint that reads either shape has to read both.
- */
+/** The origin's 409: the code is its own field, not the head of a sentence. */
 function inFlightResponse(): Response {
 	return new Response(
 		JSON.stringify({
@@ -103,7 +89,6 @@ function paywallResponse(): Response {
 	});
 }
 
-/** Answers each call in turn, and records what was sent. */
 function stubFetch(responses: Response[]): { calls: { url: string; headers: Headers }[] } {
 	const calls: { url: string; headers: Headers }[] = [];
 
@@ -117,10 +102,7 @@ function stubFetch(responses: Response[]): { calls: { url: string; headers: Head
 	return { calls };
 }
 
-/**
- * A fresh copy of the modules, because both the payment client and the queue are
- * built once and hold whichever keys were set when they were.
- */
+/** Fresh modules: the payment client and the queue are each built once. */
 async function load(keys: Record<string, string | undefined>) {
 	vi.resetModules();
 
@@ -157,7 +139,6 @@ describe("the free attempt", () => {
 		expect(verification.result.verdict).toBe("safe");
 	});
 
-	// Base is the only rail that answers an unpaid call at all.
 	it("always goes to the free rail", async () => {
 		const { verifyPackage } = await load({});
 		const { calls } = stubFetch([verdictResponse(true)]);
@@ -199,15 +180,13 @@ describe("paying", () => {
 
 		const verification = await verifyPackage(REQUEST);
 
-		// The free attempt is reused as the quote: same rail, so no second 402.
 		expect(calls).toHaveLength(2);
 		expect(calls[1]?.url).toBe(RAILS.base.verifyUrl);
 		expect(verification.free).toBe(false);
 		expect(verification.payment?.amount).toBe("50000");
 		expect(verification.payment?.rail.id).toBe("base");
 
-		// Not asserted by name: v2 calls this PAYMENT-SIGNATURE where v1 called it
-		// X-PAYMENT, and this server hardcodes neither.
+		// Not asserted by name: v2 calls this PAYMENT-SIGNATURE, v1 X-PAYMENT.
 		const payment = [...(calls[1]?.headers ?? [])].find(([name]) => /payment/i.test(name));
 		expect(payment).toBeDefined();
 
@@ -226,8 +205,6 @@ describe("paying", () => {
 		expect(calls).toHaveLength(2);
 	});
 
-	// The refusal an unfunded wallet actually draws. It says nothing about a
-	// balance, so a hint keyed to the word "insufficient" never fires on it.
 	it("explains the refusal an empty Base wallet draws, and names the account", async () => {
 		const { verifyPackage } = await load({ [RAILS.base.keyEnvVar]: TEST_KEY });
 		stubFetch([paywallResponse(), refusalResponse(EMPTY_WALLET_REFUSAL)]);
@@ -284,8 +261,6 @@ describe("rail preference", () => {
 });
 
 describe("concurrency", () => {
-	// The origin allows one verification in flight per payer and answers 409 to
-	// the second, so the calls have to queue rather than overlap.
 	it("runs one verification at a time", async () => {
 		const { verifyPackage } = await load({});
 

@@ -1,6 +1,5 @@
 name: Publish
 
-# Tagged, not on push: publishing is a decision, and the tag is where it is made.
 on:
   push:
     tags: ["v*"]
@@ -8,8 +7,7 @@ on:
 permissions:
   contents: read
   # Mints the OIDC token npm exchanges for publish rights. No NPM_TOKEN: this
-  # package is published by trusted publishing, so there is no long-lived
-  # credential to steal.
+  # package uses trusted publishing.
   id-token: write
 
 jobs:
@@ -19,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # npm needs 11.5.1+ for OIDC; Node 24 ships well past that.
+      # npm needs 11.5.1+ for OIDC; Node 24 ships past that.
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -28,9 +26,6 @@ jobs:
 
       - run: npm ci
 
-      # A tag that disagrees with package.json would publish a version nobody
-      # asked for. A test already ties package.json to server.json and
-      # SERVER_VERSION, so checking the tag here ties the whole chain together.
       - name: Check the tag matches the version being published
         run: |
           version="$(node -p "require('./package.json').version")"
@@ -39,20 +34,17 @@ jobs:
             exit 1
           fi
 
-      # The tag is not trusted to have been tested. A red build here is a
-      # release that does not happen.
+      # The tag is not trusted to have been tested.
       - run: npm run lint
       - run: npm test
 
-      # --provenance signs the tarball against this commit and this run, which is
-      # the claim `repository_provenance` looks for in everything else.
+      # --provenance signs the tarball against this commit and this run.
       # prepublishOnly builds dist/ first.
       - run: npm publish --provenance --access public
 
-      # A publish that half-succeeds must not report green: the run that
-      # published 0.1.0 signed a provenance statement and then failed to
-      # publish at all. The registry can lag a publish by a few seconds, so
-      # this waits on it rather than racing it.
+      # The run that published 0.1.0 signed a provenance statement and then
+      # failed to publish at all. The registry can lag a publish by a few
+      # seconds, so this waits on it rather than racing it.
       - name: Confirm the registry serves the tagged version, with provenance
         run: |
           name="$(node -p "require('./package.json').name")"
@@ -76,4 +68,73 @@ jobs:
           done
 
           echo "registry never served ${name}@${version}" >&2
+          exit 1
+
+  # Separate from `publish` so it cannot start before the npm package it names
+  # exists: server.json points at @pkgproof/mcp at this exact version.
+  registry:
+    needs: publish
+    runs-on: ubuntu-latest
+
+    # The DNS key authenticates all of net.pkgproof/*, so it belongs in a secret
+    # on this environment rather than on the repository. Declaring `environment:`
+    # is what allows that; it protects nothing on its own.
+    environment: mcp-registry-publish
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned to a release and to its bytes. The release signs artifacts with a
+      # sigstore bundle rather than an in-toto attestation, so a digest is the
+      # check that needs no extra tooling.
+      - name: Install mcp-publisher
+        env:
+          MCP_PUBLISHER_VERSION: v1.8.1
+          MCP_PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
+        run: |
+          curl -fsSL -o mcp-publisher.tar.gz \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+          echo "${MCP_PUBLISHER_SHA256}  mcp-publisher.tar.gz" | sha256sum --check --strict
+          tar xzf mcp-publisher.tar.gz mcp-publisher
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+
+      # DNS, not github-oidc: OIDC grants io.github.<owner>/*, and this server is
+      # net.pkgproof/pkgproof, verified by the TXT record on pkgproof.net.
+      - name: Authenticate to the MCP Registry
+        env:
+          MCP_PRIVATE_KEY: ${{ secrets.MCP_PRIVATE_KEY }}
+        run: ./mcp-publisher login dns --domain pkgproof.net --private-key "$MCP_PRIVATE_KEY"
+
+      - name: Publish server.json to the MCP Registry
+        run: ./mcp-publisher publish
+
+      - name: Confirm the registry serves this version as latest
+        run: |
+          name="$(jq -r .name server.json)"
+          version="$(jq -r .version server.json)"
+
+          for attempt in 1 2 3 4 5 6; do
+            latest="$(curl -fsS "https://registry.modelcontextprotocol.io/v0/servers?search=pkgproof" \
+              | jq -r --arg name "${name}" '
+                  .servers[]
+                  | select(._meta["io.modelcontextprotocol.registry/official"].isLatest)
+                  | select(.server.name == $name)
+                  | .server.version
+                ')"
+
+            if [ "${latest}" = "${version}" ]; then
+              echo "${name}@${version} is the latest version in the MCP Registry"
+              exit 0
+            fi
+
+            echo "attempt ${attempt}: registry has '${latest:-nothing}', waiting"
+            sleep 5
+          done
+
+          echo "registry never served ${name}@${version} as latest" >&2
           exit 1

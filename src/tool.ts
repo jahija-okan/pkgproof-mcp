@@ -1,5 +1,3 @@
-/** The one tool: its schemas, and the summary a model reads before the JSON. */
-
 import type { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod";
 
@@ -22,11 +20,10 @@ const inputSchema = z.object({
 		.describe("Exact version to verify. Omit to verify the package rather than one release."),
 });
 
-// Loose, both here and below: structuredContent is the API's response as it
-// came, so a field added upstream must not fail validation on the way out.
+// Loose, so a field added upstream does not fail validation on the way out.
+// The verdict stays enumerated: an unrecognised one must not reach the model as
+// though it had been understood.
 const reasonSchema = z.looseObject({
-	// Enumerated rather than left a free string: an unrecognised verdict must not
-	// reach the model as though it had been understood.
 	verdict: z.enum(VERDICTS),
 	code: z.string().describe("Stable identifier for the check that produced this."),
 	kind: z.string().describe('"fact" for something verified, "heuristic" for a signal.'),
@@ -59,7 +56,7 @@ export function registerVerifyPackage(server: McpServer): void {
 			inputSchema,
 			outputSchema,
 			annotations: {
-				// Not read-only: past the daily free verification this spends USDC.
+				// Past the daily free verification this spends USDC.
 				readOnlyHint: false,
 				destructiveHint: false,
 				idempotentHint: false,

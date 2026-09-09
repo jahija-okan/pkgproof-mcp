@@ -1,8 +1,5 @@
-/** The service's HTTP surface: one POST per verification, and the two error shapes it answers with. */
-
 import type { Rail } from "./meta.js";
 
-/** Ordered worst-last. The overall verdict is the worst any check produced. */
 export const VERDICTS = ["safe", "caution", "block", "does_not_exist"] as const;
 
 export type Verdict = (typeof VERDICTS)[number];
@@ -38,7 +35,6 @@ export interface Attempt {
 	body: unknown;
 }
 
-/** One call at one rail. `payment` carries the signed header when there is one. */
 export async function verifyOnce(
 	rail: Rail,
 	request: VerifyRequest,
@@ -53,7 +49,6 @@ export async function verifyOnce(
 	return { rail, response, body: await parseBody(response) };
 }
 
-/** Whether the service gave this verdict away as the caller's free one for the day. */
 export function wasFree(response: Response): boolean {
 	return response.headers.get("x-free-verification") === "1";
 }
@@ -79,8 +74,7 @@ async function parseBody(response: Response): Promise<unknown> {
 	try {
 		return JSON.parse(text) as unknown;
 	} catch {
-		// A non-JSON body is an infrastructure error page, not the service. Enough
-		// of it to identify, not enough to fill the model's context.
+		// A non-JSON body is an infrastructure error page, not the service.
 		return text.slice(0, 200);
 	}
 }

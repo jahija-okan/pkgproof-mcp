@@ -1,5 +1,3 @@
-/** One verification: unpaid first, paid only once the free one is gone. */
-
 import {
 	apiError,
 	verifyOnce,
@@ -20,16 +18,12 @@ export interface Payment {
 
 export interface Verification {
 	result: VerifyResult;
-	/** null when the service answered without being paid. */
 	payment: Payment | null;
 	free: boolean;
 }
 
-/**
- * The origin allows one verification in flight per payer and answers 409 to the
- * second, so an agent walking a dependency list queues here instead of failing on
- * everything but the first.
- */
+// The origin allows one verification in flight per payer and answers 409 to the
+// second, so calls queue here rather than overlap.
 let queue: Promise<unknown> = Promise.resolve();
 
 export function verifyPackage(request: VerifyRequest): Promise<Verification> {
@@ -39,9 +33,7 @@ export function verifyPackage(request: VerifyRequest): Promise<Verification> {
 }
 
 async function run(request: VerifyRequest): Promise<Verification> {
-	// Unpaid first, always, even with a key configured: charging for something we
-	// were about to be given is indefensible the first time someone reads the
-	// receipts.
+	// Unpaid first, always, even with a key configured.
 	const free = await verifyOnce(FREE_RAIL, request);
 	if (free.response.ok) {
 		return served(free);
@@ -68,8 +60,8 @@ async function run(request: VerifyRequest): Promise<Verification> {
 	const payment = await signPayment(quote);
 	const paid = await verifyOnce(rail, request, payment.headers);
 
-	// One tool call signs at most one authorisation. A retry that signs a fresh
-	// one is a second real charge for the same question, so a failure stops here.
+	// One tool call signs at most one authorisation: a retry would be a second
+	// real charge for the same question.
 	if (!paid.response.ok) {
 		throw new VerifyError(paymentFailure(paid));
 	}
@@ -106,7 +98,6 @@ function noWalletMessage(): string {
 	].join("\n");
 }
 
-/** The service refused before anything was signed. */
 function serviceError(attempt: Attempt): string {
 	const error = apiError(attempt.body);
 	return `${attempt.rail.label} answered ${attempt.response.status}: ${detail(error)}`;
@@ -125,13 +116,6 @@ function paymentFailure(attempt: Attempt): string {
 		.join("\n");
 }
 
-/**
- * Guidance for the failures a caller can act on, with the wallet named.
- *
- * The address is appended in one place rather than written into each branch: it
- * is the same answer to "which wallet" whatever went wrong, and it is absent
- * only when the key that produced the failure will not parse.
- */
 function hintFor(rail: Rail, code: string): string {
 	const hint = failureHint(rail, code);
 	if (!hint) {
@@ -152,8 +136,8 @@ function failureHint(rail: Rail, code: string): string {
 			: `The wallet is out of USDC. Top it up on ${rail.label}.`;
 	}
 	if (matches(code, "execution reverted")) {
-		// What an unfunded Base wallet actually produces. Not asserted as the cause:
-		// a reused or expired authorisation reverts the same way.
+		// Not asserted as the cause: a reused or expired authorisation reverts the
+		// same way an unfunded wallet does.
 		return `${rail.label} rejected the authorisation on-chain. The usual cause is an empty wallet holding no USDC.`;
 	}
 	return "";
@@ -161,9 +145,8 @@ function failureHint(rail: Rail, code: string): string {
 
 /**
  * The paywall answers `{ error: "<code>: <detail>" }`, so the code is the first
- * segment and not the whole string: an unfunded Base wallet arrives as
- * `invalid_payload: contract call failed: unable to call contract: execution
- * reverted`. The detail is searched too, because that is where the cause is.
+ * segment rather than the whole string. The detail is searched too, because that
+ * is where the cause is.
  */
 function matches(code: string, needle: string): boolean {
 	const token = code.split(":", 1)[0]?.trim() ?? "";
