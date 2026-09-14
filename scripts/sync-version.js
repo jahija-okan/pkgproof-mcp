@@ -1,5 +1,5 @@
-// Carries the version npm just wrote in package.json into the two other files
-// that declare it. Run by the `version` lifecycle script, after the bump and
+// Carries the version npm just wrote in package.json into the other files that
+// declare it. Run by the `version` lifecycle script, after the bump and
 // before the commit; npm stages package.json itself but nothing else.
 
 import { execFileSync } from "node:child_process";
@@ -10,12 +10,16 @@ const path = (name) => fileURLToPath(new URL(`../${name}`, import.meta.url));
 
 const version = JSON.parse(readFileSync(path("package.json"), "utf8")).version;
 
+const files = ["server.json", "src/meta.ts", ".claude-plugin/plugin.json", "mcpb/manifest.json"];
+
 rewriteServerJson(version);
 rewriteServerVersion(version);
+rewritePluginJson(version);
+rewriteMcpbManifest(version);
 
-execFileSync("git", ["add", "server.json", "src/meta.ts"], { stdio: "inherit" });
+execFileSync("git", ["add", ...files], { stdio: "inherit" });
 
-console.log(`version ${version} written to server.json and src/meta.ts`);
+console.log(`version ${version} written to ${files.join(", ")}`);
 
 function rewriteServerJson(version) {
 	const file = path("server.json");
@@ -26,8 +30,27 @@ function rewriteServerJson(version) {
 		pkg.version = version;
 	}
 
-	// Tabs and a trailing newline, to match prettier.
-	writeFileSync(file, `${JSON.stringify(server, null, "\t")}\n`);
+	writeJson(file, server);
+}
+
+function rewritePluginJson(version) {
+	const file = path(".claude-plugin/plugin.json");
+	const plugin = JSON.parse(readFileSync(file, "utf8"));
+
+	plugin.version = version;
+	// The plugin runs the published package, pinned: an unpinned npx would hand
+	// users a version this repo never tested against this manifest.
+	plugin.mcpServers.pkgproof.args = ["-y", `@pkgproof/mcp@${version}`];
+
+	writeJson(file, plugin);
+}
+
+function rewriteMcpbManifest(version) {
+	const file = path("mcpb/manifest.json");
+	const manifest = JSON.parse(readFileSync(file, "utf8"));
+
+	manifest.version = version;
+	writeJson(file, manifest);
 }
 
 function rewriteServerVersion(version) {
@@ -40,4 +63,9 @@ function rewriteServerVersion(version) {
 	}
 
 	writeFileSync(file, source.replace(declaration, `export const SERVER_VERSION = "${version}";`));
+}
+
+// Tabs and a trailing newline, to match prettier.
+function writeJson(file, value) {
+	writeFileSync(file, `${JSON.stringify(value, null, "\t")}\n`);
 }

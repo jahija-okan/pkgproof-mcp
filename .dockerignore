@@ -1,0 +1,9 @@
+node_modules
+dist
+mcpb
+test
+.git
+.github
+.env
+.env.*
+*.log

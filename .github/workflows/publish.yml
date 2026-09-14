@@ -138,3 +138,35 @@ jobs:
 
           echo "registry never served ${name}@${version} as latest" >&2
           exit 1
+
+  # The bundle Claude Desktop installs and Smithery distributes. Built from the
+  # tagged source rather than the npm tarball, and attached to the GitHub release
+  # because neither surface hosts a file for you.
+  bundle:
+    needs: publish
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run mcpb
+
+      - name: Attach the bundle to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release create "${GITHUB_REF_NAME}" \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi
+          gh release upload "${GITHUB_REF_NAME}" mcpb/pkgproof-*.mcpb --clobber

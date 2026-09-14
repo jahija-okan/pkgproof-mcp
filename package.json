@@ -34,6 +34,7 @@
 	},
 	"scripts": {
 		"build": "tsc",
+		"mcpb": "node scripts/build-mcpb.js",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
 		"inspector": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",

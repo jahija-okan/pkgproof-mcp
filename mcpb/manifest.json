@@ -1,0 +1,63 @@
+{
+	"manifest_version": "0.3",
+	"name": "pkgproof",
+	"display_name": "pkgproof",
+	"version": "0.1.4",
+	"description": "Verify an npm package before you install it: advisories, install scripts, typosquats, provenance.",
+	"long_description": "One tool, `verify_package`. It runs eight checks against pkgproof.net covering advisories, install scripts, typosquat and combosquat names, scope, repository provenance and maintainer reputation, and answers `safe`, `caution`, `block` or `does_not_exist` with every reason labelled as fact or heuristic against its source.\n\nThe first verification each day is free and needs no configuration. Later calls the same day cost $0.05 in USDC, paid per call over x402, and only if you configure a wallet.",
+	"author": {
+		"name": "Jahija Okan",
+		"url": "https://pkgproof.net"
+	},
+	"homepage": "https://pkgproof.net",
+	"documentation": "https://pkgproof.net/docs",
+	"support": "https://github.com/jahija-okan/pkgproof-mcp/issues",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jahija-okan/pkgproof-mcp"
+	},
+	"license": "Apache-2.0",
+	"keywords": ["npm", "security", "supply-chain", "typosquat", "provenance"],
+	"privacy_policies": ["https://github.com/jahija-okan/pkgproof-mcp/blob/main/PRIVACY.md"],
+	"server": {
+		"type": "node",
+		"entry_point": "server/index.js",
+		"mcp_config": {
+			"command": "node",
+			"args": ["${__dirname}/server/index.js"],
+			"env": {
+				"PKGPROOF_ALGORAND_PRIVATE_KEY": "${user_config.algorand_private_key}",
+				"PKGPROOF_BASE_PRIVATE_KEY": "${user_config.base_private_key}"
+			}
+		}
+	},
+	"tools": [
+		{
+			"name": "verify_package",
+			"description": "Verify an npm package before installing it: advisories, install scripts, typosquats, scope, provenance, maintainer reputation."
+		}
+	],
+	"tools_generated": false,
+	"user_config": {
+		"algorand_private_key": {
+			"type": "string",
+			"title": "Algorand private key",
+			"description": "Base64 account key of a throwaway Algorand wallet holding USDC (ASA 31566704) on Mainnet. Not a 25-word mnemonic. Optional: the first verification each day is free without any key. Payments prefer this rail.",
+			"sensitive": true,
+			"required": false
+		},
+		"base_private_key": {
+			"type": "string",
+			"title": "Base private key",
+			"description": "0x-prefixed private key of a throwaway EVM wallet holding USDC on Base. Optional, and only used when no Algorand key is set. Needs no ETH: the facilitator pays the gas.",
+			"sensitive": true,
+			"required": false
+		}
+	},
+	"compatibility": {
+		"platforms": ["darwin", "win32", "linux"],
+		"runtimes": {
+			"node": ">=22.0.0"
+		}
+	}
+}

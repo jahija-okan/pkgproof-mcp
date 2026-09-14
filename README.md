@@ -44,6 +44,25 @@ Add this to your MCP client configuration and you are done:
 }
 ```
 
+## Claude Code
+
+The repository is its own plugin marketplace, so there is no JSON to edit:
+
+```sh
+/plugin marketplace add jahija-okan/pkgproof-mcp
+/plugin install pkgproof@pkgproof
+```
+
+The plugin runs the published package pinned to the version it was released
+beside, not whatever `npx` resolves to that day.
+
+## Claude Desktop
+
+Releases carry a prebuilt `.mcpb` bundle on the
+[releases page](https://github.com/jahija-okan/pkgproof-mcp/releases). Download it
+and open it: Desktop installs the server and holds the wallet keys in the OS
+secret store rather than in a plain-text configuration file.
+
 ## The tool
 
 `verify_package`, and nothing else. One call is one verification, so the daily
@@ -160,6 +179,13 @@ charged once the day's free verification is used up.
 
 With neither set, the server is free-tier only and says so once the day's
 verification is spent.
+
+## Privacy Policy
+
+One HTTPS request per verification, carrying the package name, version and
+ecosystem you asked about and nothing else: no account, no telemetry, no file
+contents. Wallet keys are used to sign locally and are never transmitted. Full
+text in [PRIVACY.md](PRIVACY.md).
 
 ## Development
 

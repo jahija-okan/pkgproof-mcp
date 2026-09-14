@@ -5,3 +5,5 @@ dist/
 .env
 .env.*
 *.pem
+mcpb/build/
+mcpb/*.mcpb

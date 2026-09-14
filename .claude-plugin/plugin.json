@@ -1,0 +1,20 @@
+{
+	"name": "pkgproof",
+	"displayName": "pkgproof",
+	"description": "Verify an npm package before you install it: advisories, install scripts, typosquats, provenance.",
+	"version": "0.1.4",
+	"author": {
+		"name": "Jahija Okan",
+		"url": "https://pkgproof.net"
+	},
+	"homepage": "https://pkgproof.net",
+	"repository": "https://github.com/jahija-okan/pkgproof-mcp",
+	"license": "Apache-2.0",
+	"keywords": ["npm", "security", "supply-chain", "typosquat", "provenance"],
+	"mcpServers": {
+		"pkgproof": {
+			"command": "npx",
+			"args": ["-y", "@pkgproof/mcp@0.1.4"]
+		}
+	}
+}

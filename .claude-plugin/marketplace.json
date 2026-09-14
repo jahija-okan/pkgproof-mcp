@@ -1,0 +1,16 @@
+{
+	"name": "pkgproof",
+	"description": "The pkgproof MCP server: verify an npm package before you install it.",
+	"owner": {
+		"name": "Jahija Okan",
+		"url": "https://pkgproof.net"
+	},
+	"plugins": [
+		{
+			"name": "pkgproof",
+			"source": "./",
+			"description": "Verify an npm package before you install it: advisories, install scripts, typosquats, provenance.",
+			"category": "security"
+		}
+	]
+}
