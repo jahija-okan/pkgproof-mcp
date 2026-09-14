@@ -38,23 +38,48 @@ jobs:
       - run: npm run lint
       - run: npm test
 
+      # npm answers a publish it has only queued, so a version can be accepted
+      # here and served minutes later. Re-running this workflow after that lands
+      # would fail on `npm publish` with "cannot publish over the previously
+      # published version" and skip `registry` and `bundle` with it, leaving no
+      # way to reach them short of burning the next version number.
+      - name: Check whether the registry already serves this version
+        id: published
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+
+          if [ "$(npm view --prefer-online "${name}@${version}" version 2>/dev/null || true)" = "${version}" ]; then
+            echo "already=true" >>"${GITHUB_OUTPUT}"
+            echo "${name}@${version} is already on the registry; skipping the publish"
+          else
+            echo "already=false" >>"${GITHUB_OUTPUT}"
+          fi
+
       # --provenance signs the tarball against this commit and this run.
       # prepublishOnly builds dist/ first.
-      - run: npm publish --provenance --access public
+      - if: steps.published.outputs.already != 'true'
+        run: npm publish --provenance --access public
 
       # The run that published 0.1.0 signed a provenance statement and then
-      # failed to publish at all. The registry can lag a publish by a few
-      # seconds, so this waits on it rather than racing it.
+      # failed to publish at all, and 0.1.5 did the same. npm's own answer to a
+      # publish is that it "may take a few minutes to become available", so the
+      # wait here is measured in minutes; the six five-second attempts this
+      # replaces could not outlast the latency they existed to absorb.
+      #
+      # --prefer-online on every read: npm serves cached metadata otherwise, and
+      # a loop polling its own cached 404 would wait out the full budget and
+      # still miss a version that had landed.
       - name: Confirm the registry serves the tagged version, with provenance
         run: |
           name="$(node -p "require('./package.json').name")"
           version="$(node -p "require('./package.json').version")"
 
-          for attempt in 1 2 3 4 5 6; do
-            published="$(npm view "${name}@${version}" version 2>/dev/null || true)"
+          for attempt in $(seq 1 40); do
+            published="$(npm view --prefer-online "${name}@${version}" version 2>/dev/null || true)"
 
             if [ "${published}" = "${version}" ]; then
-              attestations="$(npm view "${name}@${version}" dist.attestations 2>/dev/null || true)"
+              attestations="$(npm view --prefer-online "${name}@${version}" dist.attestations 2>/dev/null || true)"
               if [ -z "${attestations}" ]; then
                 echo "${name}@${version} published without a provenance attestation" >&2
                 exit 1
@@ -63,11 +88,11 @@ jobs:
               exit 0
             fi
 
-            echo "attempt ${attempt}: registry has '${published:-nothing}', waiting"
-            sleep 5
+            echo "attempt ${attempt}/40: registry has '${published:-nothing}', waiting"
+            sleep 15
           done
 
-          echo "registry never served ${name}@${version}" >&2
+          echo "registry never served ${name}@${version} within 10 minutes" >&2
           exit 1
 
   # Separate from `publish` so it cannot start before the npm package it names
