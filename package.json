@@ -1,6 +1,6 @@
 {
 	"name": "@pkgproof/mcp",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"mcpName": "net.pkgproof/pkgproof",
 	"description": "Verify an npm package before you install it. MCP server for pkgproof.",
 	"keywords": [
