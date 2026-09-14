@@ -7,3 +7,4 @@ dist/
 *.pem
 mcpb/build/
 mcpb/*.mcpb
+DISTRIBUTION.md
