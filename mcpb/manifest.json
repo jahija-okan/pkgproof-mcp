@@ -2,7 +2,7 @@
 	"manifest_version": "0.3",
 	"name": "pkgproof",
 	"display_name": "pkgproof",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"description": "Verify an npm package before you install it: advisories, install scripts, typosquats, provenance.",
 	"long_description": "One tool, `verify_package`. It runs eight checks against pkgproof.net covering advisories, install scripts, typosquat and combosquat names, scope, repository provenance and maintainer reputation, and answers `safe`, `caution`, `block` or `does_not_exist` with every reason labelled as fact or heuristic against its source.\n\nThe first verification each day is free and needs no configuration. Later calls the same day cost $0.05 in USDC, paid per call over x402, and only if you configure a wallet.",
 	"author": {
