@@ -17,24 +17,14 @@
 		"url": "https://github.com/jahija-okan/pkgproof-mcp"
 	},
 	"license": "Apache-2.0",
-	"keywords": [
-		"npm",
-		"security",
-		"supply-chain",
-		"typosquat",
-		"provenance"
-	],
-	"privacy_policies": [
-		"https://github.com/jahija-okan/pkgproof-mcp/blob/main/PRIVACY.md"
-	],
+	"keywords": ["npm", "security", "supply-chain", "typosquat", "provenance"],
+	"privacy_policies": ["https://github.com/jahija-okan/pkgproof-mcp/blob/main/PRIVACY.md"],
 	"server": {
 		"type": "node",
 		"entry_point": "server/index.js",
 		"mcp_config": {
 			"command": "node",
-			"args": [
-				"${__dirname}/server/index.js"
-			],
+			"args": ["${__dirname}/server/index.js"],
 			"env": {
 				"PKGPROOF_ALGORAND_PRIVATE_KEY": "${user_config.algorand_private_key}",
 				"PKGPROOF_BASE_PRIVATE_KEY": "${user_config.base_private_key}"
@@ -65,11 +55,7 @@
 		}
 	},
 	"compatibility": {
-		"platforms": [
-			"darwin",
-			"win32",
-			"linux"
-		],
+		"platforms": ["darwin", "win32", "linux"],
 		"runtimes": {
 			"node": ">=22.0.0"
 		}

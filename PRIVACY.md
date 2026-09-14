@@ -1,7 +1,7 @@
 # Privacy Policy
 
 Applies to the `@pkgproof/mcp` server, the Claude Code plugin, and the desktop
-extension built from this repository. Last updated 2026-09-09.
+extension built from this repository. Last updated 2026-09-14.
 
 ## What the server sends
 
@@ -53,9 +53,15 @@ purchased. They do not record which package was verified.
   server is launched with `npx`, which is npm's normal install traffic, not
   something this server reports.
 
-Verification requests are processed by the pkgproof service. Retention of
-service-side request logs is set by the service operator; ask through the issue
-tracker below.
+## Retention
+
+This server is the client. pkgproof.net is operated separately and sets its own
+log retention, and that policy is not published yet. Until it is, assume
+service-side request logs may be kept, and ask through the issue tracker below
+for the current position.
+
+Settled x402 payments are the exception, and not because of retention: a
+blockchain record is permanent by construction, as described above.
 
 ## Contact
 

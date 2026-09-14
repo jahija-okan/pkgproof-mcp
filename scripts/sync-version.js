@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { format, resolveConfig } from "prettier";
 
 const path = (name) => fileURLToPath(new URL(`../${name}`, import.meta.url));
 
@@ -12,16 +13,18 @@ const version = JSON.parse(readFileSync(path("package.json"), "utf8")).version;
 
 const files = ["server.json", "src/meta.ts", ".claude-plugin/plugin.json", "mcpb/manifest.json"];
 
-rewriteServerJson(version);
+const prettierConfig = await resolveConfig(path("package.json"));
+
+await rewriteServerJson(version);
 rewriteServerVersion(version);
-rewritePluginJson(version);
-rewriteMcpbManifest(version);
+await rewritePluginJson(version);
+await rewriteMcpbManifest(version);
 
 execFileSync("git", ["add", ...files], { stdio: "inherit" });
 
 console.log(`version ${version} written to ${files.join(", ")}`);
 
-function rewriteServerJson(version) {
+async function rewriteServerJson(version) {
 	const file = path("server.json");
 	const server = JSON.parse(readFileSync(file, "utf8"));
 
@@ -30,10 +33,10 @@ function rewriteServerJson(version) {
 		pkg.version = version;
 	}
 
-	writeJson(file, server);
+	await writeJson(file, server);
 }
 
-function rewritePluginJson(version) {
+async function rewritePluginJson(version) {
 	const file = path(".claude-plugin/plugin.json");
 	const plugin = JSON.parse(readFileSync(file, "utf8"));
 
@@ -42,15 +45,15 @@ function rewritePluginJson(version) {
 	// users a version this repo never tested against this manifest.
 	plugin.mcpServers.pkgproof.args = ["-y", `@pkgproof/mcp@${version}`];
 
-	writeJson(file, plugin);
+	await writeJson(file, plugin);
 }
 
-function rewriteMcpbManifest(version) {
+async function rewriteMcpbManifest(version) {
 	const file = path("mcpb/manifest.json");
 	const manifest = JSON.parse(readFileSync(file, "utf8"));
 
 	manifest.version = version;
-	writeJson(file, manifest);
+	await writeJson(file, manifest);
 }
 
 function rewriteServerVersion(version) {
@@ -65,7 +68,13 @@ function rewriteServerVersion(version) {
 	writeFileSync(file, source.replace(declaration, `export const SERVER_VERSION = "${version}";`));
 }
 
-// Tabs and a trailing newline, to match prettier.
-function writeJson(file, value) {
-	writeFileSync(file, `${JSON.stringify(value, null, "\t")}\n`);
+// Formatted by prettier rather than by hand: JSON.stringify expands short
+// arrays that `prettier --check` wants on one line, so a bump written its way
+// fails the lint step of the release it is bumping for. It is fed the indented
+// form because prettier keeps an object expanded only when its input already
+// broke the line after `{`; minified input collapses every object that fits.
+async function writeJson(file, value) {
+	const json = JSON.stringify(value, null, "\t");
+
+	writeFileSync(file, await format(json, { ...prettierConfig, filepath: file }));
 }
