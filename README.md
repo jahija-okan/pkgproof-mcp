@@ -121,19 +121,6 @@ works, and configuring neither still gets you a verdict a day.
 facilitator covers the network fee on every payment and your ALGO balance does
 not move.
 
-**Setting the account up does cost ALGO, once.** An Algorand account cannot
-receive an asset until it opts into it, so USDC sent to an account that has not
-opted in will not arrive. Three steps, in this order:
-
-1. Fund the throwaway account with about **0.3 ALGO**. Algorand locks 0.1 as the
-   account's minimum balance, another 0.1 for as long as it holds USDC, and the
-   opt-in transaction itself costs a fee.
-2. **Opt into ASA `31566704`** (USDC on Mainnet). This is a zero-amount transfer
-   from the account to itself; any Algorand wallet will do it.
-3. Send USDC to the account.
-
-The key is the base64 account key, **not** a 25-word mnemonic.
-
 ```json
 {
 	"mcpServers": {
@@ -179,6 +166,66 @@ charged once the day's free verification is used up.
 
 With neither set, the server is free-tier only and says so once the day's
 verification is spent.
+
+## Easy setup, step by step
+
+Needs Node 22 or newer. Use a throwaway account, as warned above.
+
+1. **Generate a throwaway Algorand account.** This downloads a small helper
+   script that creates a fresh account on your machine:
+
+   ```sh
+   git clone https://github.com/jahija-okan/pkgproof-x402-algorand
+   cd pkgproof-x402-algorand
+   npm install
+   npx tsx algo-account.ts new
+   ```
+
+   It prints `ADDRESS`, `KEY_B64` and `MNEMONIC` once and saves nothing. Keep
+   them somewhere safe, such as a password manager. Use `KEY_B64` everywhere
+   below, never the 25-word `MNEMONIC`.
+
+2. **Send 0.3 ALGO to `ADDRESS`.** Buy ALGO on an exchange and withdraw it on
+   the Algorand network. A new account is empty and cannot do anything until it
+   holds ALGO. This covers the account's minimum balance and the opt-in fee, and
+   is a one-time cost. Verifications themselves cost no ALGO.
+
+3. **Opt the account into USDC.** Algorand accounts must opt into an asset
+   before they can receive it, so USDC sent to an account that has not opted in
+   will not arrive. This command signs that opt-in with your key:
+
+   ```sh
+   ALGOD_URL=https://mainnet-api.algonode.cloud ASSET_ID=31566704 \
+   ALGO_PRIVATE_KEY=<KEY_B64> npx tsx algo-account.ts optin
+   ```
+
+4. **Send USDC on Algorand to `ADDRESS`.** Withdraw USDC from an exchange on
+   the Algorand network, not Base or Ethereum. Each verification costs $0.05, so
+   $1 covers 20 of them.
+
+5. **Check that both arrived.** This reads the account from the network and
+   prints its ALGO balance and USDC balance. `NOT OPTED IN` means step 3 did
+   not go through:
+
+   ```sh
+   ALGOD_URL=https://mainnet-api.algonode.cloud ASSET_ID=31566704 \
+   npx tsx algo-account.ts balance <ADDRESS>
+   ```
+
+6. **Add the server to Claude Code.** This registers pkgproof as an MCP server
+   and hands it the key, which it uses to sign payments on your machine and
+   never sends anywhere:
+
+   ```sh
+   claude mcp add pkgproof -e PKGPROOF_ALGORAND_PRIVATE_KEY=<KEY_B64> -- npx -y @pkgproof/mcp
+   ```
+
+7. **Run a verification.** Start `claude` and ask:
+   `check package crossenv with pkgproof`. Claude calls the `verify_package`
+   tool and reports a verdict with its reasons.
+
+The first verification each day is free and goes through Base. Later ones are
+paid from the Algorand account.
 
 ## Privacy Policy
 
