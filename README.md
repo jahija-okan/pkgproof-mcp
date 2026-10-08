@@ -214,10 +214,11 @@ Needs Node 22 or newer. Use a throwaway account, as warned above.
 
 6. **Add the server to Claude Code.** This registers pkgproof as an MCP server
    and hands it the key, which it uses to sign payments on your machine and
-   never sends anywhere:
+   never sends anywhere. `--scope user` installs it for every project, without
+   it, Claude Code registers the server for the current directory only:
 
    ```sh
-   claude mcp add pkgproof -e PKGPROOF_ALGORAND_PRIVATE_KEY=<KEY_B64> -- npx -y @pkgproof/mcp
+   claude mcp add --scope user pkgproof -e PKGPROOF_ALGORAND_PRIVATE_KEY=<KEY_B64> -- npx -y @pkgproof/mcp
    ```
 
 7. **Run a verification.** Start `claude` and ask:
