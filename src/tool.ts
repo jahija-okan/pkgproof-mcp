@@ -49,8 +49,8 @@ export function registerVerifyPackage(server: McpServer): void {
 			title: "Verify package",
 			description:
 				"Verify an npm package before installing it. Runs eight checks covering advisories, " +
-				"install scripts, typosquat and combosquat names, scope, repository provenance and " +
-				"maintainer reputation, and answers safe, caution, block or does_not_exist with every " +
+				"install scripts, typosquat and combosquat names, scope and declared-repository " +
+				"checks, and answers safe, caution, block or does_not_exist with every " +
 				"reason labelled as fact or heuristic against its source. One call is one verification: " +
 				"the first each day is free, and later ones cost $0.05 in USDC when a wallet is configured.",
 			inputSchema,

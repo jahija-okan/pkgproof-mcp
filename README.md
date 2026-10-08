@@ -4,8 +4,8 @@ An MCP server that verifies an npm package before you install it.
 
 One tool, `verify_package`. It runs eight checks against
 [pkgproof.net](https://pkgproof.net) covering advisories, install scripts,
-typosquat and combosquat names, scope, repository provenance and maintainer
-reputation, and answers `safe`, `caution`, `block` or `does_not_exist` with every
+typosquat and combosquat names, scope and declared-repository
+checks, and answers `safe`, `caution`, `block` or `does_not_exist` with every
 reason labelled as fact or heuristic against its source.
 
 **The first verification each day is free and needs no configuration at all.** No
