@@ -2,7 +2,7 @@
 	"name": "pkgproof",
 	"displayName": "pkgproof",
 	"description": "Verify an npm package before install: advisories, install scripts, typosquats, declared repository.",
-	"version": "0.1.10",
+	"version": "0.1.11",
 	"author": {
 		"name": "Jahija Okan",
 		"url": "https://pkgproof.net"
@@ -14,7 +14,7 @@
 	"mcpServers": {
 		"pkgproof": {
 			"command": "npx",
-			"args": ["-y", "@pkgproof/mcp@0.1.10"]
+			"args": ["-y", "@pkgproof/mcp@0.1.11"]
 		}
 	}
 }
