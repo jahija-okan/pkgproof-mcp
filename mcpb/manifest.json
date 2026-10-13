@@ -3,7 +3,7 @@
 	"name": "pkgproof",
 	"display_name": "pkgproof",
 	"version": "0.1.11",
-	"description": "Verify an npm package before you install it: advisories, install scripts, typosquats, provenance.",
+	"description": "Verify an npm package before you install it: advisories, install scripts, typosquats, declared repository.",
 	"long_description": "One tool, `verify_package`. It runs eight checks against pkgproof.net covering advisories, install scripts, typosquat and combosquat names, scope and declared-repository checks, and answers `safe`, `caution`, `block` or `does_not_exist` with every reason labelled as fact or heuristic against its source.\n\nThe first verification each day is free and needs no configuration. Later calls the same day cost $0.05 in USDC, paid per call over x402, and only if you configure a wallet.",
 	"author": {
 		"name": "Jahija Okan",
@@ -17,7 +17,7 @@
 		"url": "https://github.com/jahija-okan/pkgproof-mcp"
 	},
 	"license": "Apache-2.0",
-	"keywords": ["npm", "security", "supply-chain", "typosquat", "provenance"],
+	"keywords": ["npm", "security", "supply-chain", "typosquat", "slopsquatting"],
 	"privacy_policies": ["https://github.com/jahija-okan/pkgproof-mcp/blob/main/PRIVACY.md"],
 	"server": {
 		"type": "node",

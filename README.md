@@ -20,7 +20,7 @@ or newer.
 Every release from 0.1.1 on is built and signed by CI and carries an npm
 [provenance attestation](https://docs.npmjs.com/generating-provenance-statements)
 tying the tarball to the commit and workflow run that produced it. A tool that
-reports on other packages' provenance should be checkable the same way:
+vets other packages should be checkable the same way:
 
 ```sh
 npm audit signatures

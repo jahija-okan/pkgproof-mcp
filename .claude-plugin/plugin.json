@@ -10,7 +10,7 @@
 	"homepage": "https://pkgproof.net",
 	"repository": "https://github.com/jahija-okan/pkgproof-mcp",
 	"license": "Apache-2.0",
-	"keywords": ["npm", "security", "supply-chain", "typosquat", "provenance"],
+	"keywords": ["npm", "security", "supply-chain", "typosquat", "slopsquatting"],
 	"mcpServers": {
 		"pkgproof": {
 			"command": "npx",
