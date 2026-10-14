@@ -142,6 +142,22 @@ describe("calling it", () => {
 		expect(text?.text).toContain("safe — npm left-pad@1.3.0");
 	});
 
+	it("names the resolved version when none was asked for", async () => {
+		respond({ ...VERDICT, resolved_version: "1.3.0", dist_tag: "latest" }, { status: 200 });
+
+		const result = await client.callTool({
+			name: "verify_package",
+			arguments: { name: "left-pad" },
+		});
+		const [text] = result.content as { text: string }[];
+
+		expect(text?.text).toContain("safe — npm left-pad@1.3.0");
+		expect(result.structuredContent).toMatchObject({
+			resolved_version: "1.3.0",
+			dist_tag: "latest",
+		});
+	});
+
 	it("refuses a nameless call before spending anything", async () => {
 		const fetched = vi.fn();
 		vi.stubGlobal("fetch", fetched);

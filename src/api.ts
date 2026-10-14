@@ -23,6 +23,8 @@ export interface VerifyResult {
 	ecosystem: string;
 	name: string;
 	version: string | null;
+	resolved_version?: string | null;
+	dist_tag?: string | null;
 	verdict: Verdict;
 	reasons: Reason[];
 	sources: Record<string, string>;

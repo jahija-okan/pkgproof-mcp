@@ -36,6 +36,20 @@ const outputSchema = z.looseObject({
 	ecosystem: z.string(),
 	name: z.string(),
 	version: z.string().nullable().describe("The version verified, or null if none was given."),
+	resolved_version: z
+		.string()
+		.nullable()
+		.optional()
+		.describe(
+			"The release the checks ran against: the version asked for, or the registry's latest."
+		),
+	dist_tag: z
+		.string()
+		.nullable()
+		.optional()
+		.describe(
+			"The dist-tag a version-less request resolved through; null when a version was given."
+		),
 	verdict: z.enum(VERDICTS),
 	reasons: z.array(reasonSchema).describe("Every reason behind the verdict."),
 	sources: z.record(z.string(), z.string()).describe("The datasets consulted, by name and URL."),
@@ -48,9 +62,9 @@ export function registerVerifyPackage(server: McpServer): void {
 		{
 			title: "Verify package",
 			description:
-				"Verify an npm package before installing it. Runs eight checks covering advisories, " +
+				"Verify an npm package before installing it. Runs nine checks covering advisories, " +
 				"install scripts, typosquat and combosquat names, scope and declared-repository " +
-				"checks, and answers safe, caution, block or does_not_exist with every " +
+				"checks, and how the release differs from its predecessors, and answers safe, caution, block or does_not_exist with every " +
 				"reason labelled as fact or heuristic against its source. One call is one verification: " +
 				"the first each day is free, and later ones cost $0.05 in USDC when a wallet is configured.",
 			inputSchema,
@@ -75,7 +89,8 @@ export function registerVerifyPackage(server: McpServer): void {
 }
 
 function summarize({ result, payment, free }: Verification): string {
-	const version = result.version ? `@${result.version}` : "";
+	const resolved = result.version ?? result.resolved_version;
+	const version = resolved ? `@${resolved}` : "";
 	const reasons = result.reasons.map(
 		(reason) => `- ${reason.verdict} (${reason.kind}, ${reason.source}) ${reason.detail}`
 	);
