@@ -2,11 +2,12 @@
 	"name": "@pkgproof/mcp",
 	"version": "0.1.12",
 	"mcpName": "net.pkgproof/pkgproof",
-	"description": "Verify an npm package before you install it. MCP server for pkgproof.",
+	"description": "Verify an npm or PyPI package before you install it. MCP server for pkgproof.",
 	"keywords": [
 		"mcp",
 		"modelcontextprotocol",
 		"npm",
+		"pypi",
 		"security",
 		"supply-chain",
 		"typosquat",

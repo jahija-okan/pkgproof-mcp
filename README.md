@@ -1,6 +1,6 @@
 # pkgproof-mcp
 
-An MCP server that verifies an npm package before you install it.
+An MCP server that verifies an npm or PyPI package before you install it.
 
 One tool, `verify_package`. It runs nine checks against
 [pkgproof.net](https://pkgproof.net) covering advisories, install scripts,
@@ -70,9 +70,9 @@ allowance means the same thing here as it does over HTTP.
 
 | Argument    | Required | Meaning                                                            |
 | ----------- | -------- | ------------------------------------------------------------------ |
-| `name`      | yes      | Package name, scoped or not: `left-pad`, `@scope/thing`.           |
+| `name`      | yes      | Package name: `left-pad`, `@scope/thing` (npm), `requests` (PyPI). |
 | `version`   | no       | Exact version. Omit to verify the package rather than one release. |
-| `ecosystem` | no       | Defaults to `npm`, the only ecosystem this service covers.         |
+| `ecosystem` | no       | `npm` (the default) or `pypi`.                                     |
 
 It answers twice over: a summary the agent reads, and the service's own JSON
 alongside it in `structuredContent`, under a declared output schema, carrying the

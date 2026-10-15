@@ -88,11 +88,12 @@ describe("the tool it advertises", () => {
 		const { tools } = await client.listTools();
 		const input = tools[0]?.inputSchema as {
 			required?: string[];
-			properties: Record<string, { default?: string }>;
+			properties: Record<string, { default?: string; enum?: string[] }>;
 		};
 
 		expect(input.required).toEqual(["name"]);
 		expect(input.properties.ecosystem?.default).toBe("npm");
+		expect(input.properties.ecosystem?.enum).toEqual(["npm", "pypi"]);
 		expect(Object.keys(input.properties)).toEqual(["ecosystem", "name", "version"]);
 	});
 

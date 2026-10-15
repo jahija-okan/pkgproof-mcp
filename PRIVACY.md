@@ -8,7 +8,7 @@ extension built from this repository. Last updated 2026-09-14.
 One HTTPS POST per `verify_package` call, to `x402.pkgproof.net` or
 `x402-algo.pkgproof.net`. Its body carries exactly three fields:
 
-- `ecosystem` — always `npm` today.
+- `ecosystem` — `npm` or `pypi`.
 - `name` — the package name you asked about.
 - `version` — the version you asked about, when you supplied one.
 

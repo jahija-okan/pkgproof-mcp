@@ -1,7 +1,7 @@
 {
 	"name": "pkgproof",
 	"displayName": "pkgproof",
-	"description": "Verify an npm package before install: advisories, install scripts, typosquats, declared repository.",
+	"description": "Verify an npm or PyPI package before install: advisories, install scripts, typosquats, declared repository.",
 	"version": "0.1.12",
 	"author": {
 		"name": "Jahija Okan",
@@ -10,7 +10,7 @@
 	"homepage": "https://pkgproof.net",
 	"repository": "https://github.com/jahija-okan/pkgproof-mcp",
 	"license": "Apache-2.0",
-	"keywords": ["npm", "security", "supply-chain", "typosquat", "slopsquatting"],
+	"keywords": ["npm", "pypi", "security", "supply-chain", "typosquat", "slopsquatting"],
 	"mcpServers": {
 		"pkgproof": {
 			"command": "npx",

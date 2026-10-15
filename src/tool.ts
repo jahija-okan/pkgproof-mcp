@@ -12,8 +12,11 @@ const ADVICE: Record<Verdict, string> = {
 };
 
 const inputSchema = z.object({
-	ecosystem: z.enum(["npm"]).default("npm").describe("Package ecosystem. Only npm is supported."),
-	name: z.string().min(1).describe("Package name, scoped or not: left-pad, @scope/thing."),
+	ecosystem: z.enum(["npm", "pypi"]).default("npm").describe("Package ecosystem: npm or pypi."),
+	name: z
+		.string()
+		.min(1)
+		.describe("Package name: left-pad or @scope/thing on npm, requests on PyPI."),
 	version: z
 		.string()
 		.optional()
@@ -62,7 +65,7 @@ export function registerVerifyPackage(server: McpServer): void {
 		{
 			title: "Verify package",
 			description:
-				"Verify an npm package before installing it. Runs nine checks covering advisories, " +
+				"Verify an npm or PyPI package before installing it. Runs up to nine checks covering advisories, " +
 				"install scripts, typosquat and combosquat names, scope and declared-repository " +
 				"checks, and how the release differs from its predecessors, and answers safe, caution, block or does_not_exist with every " +
 				"reason labelled as fact or heuristic against its source. One call is one verification: " +
