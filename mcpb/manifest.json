@@ -2,7 +2,7 @@
 	"manifest_version": "0.3",
 	"name": "pkgproof",
 	"display_name": "pkgproof",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Verify an npm or PyPI package before you install it: advisories, install scripts, typosquats, declared repository.",
 	"long_description": "One tool, `verify_package`. It runs nine checks against pkgproof.net covering advisories, install scripts, typosquat and combosquat names, scope and declared-repository checks, and how the release differs from its predecessors, and answers `safe`, `caution`, `block` or `does_not_exist` with every reason labelled as fact or heuristic against its source.\n\nThe first verification each day is free and needs no configuration. Later calls the same day cost $0.05 in USDC, paid per call over x402, and only if you configure a wallet.",
 	"author": {
